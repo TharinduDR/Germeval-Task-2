@@ -21,12 +21,16 @@ if __name__ == "__main__":
     print('Reading files')
 
     # Reading File Section - This should change
-    train = pd.read_csv("data/english/offenseval-training-v1.tsv", sep='\t')
+    train_2018 = pd.read_csv("data/german/germeval2018.training.txt", sep='\t',
+                             names=['tweet', 'sub_task_1', 'sub_task_2'])
 
-    test_tweets = pd.read_csv("data/english/testset-taska.tsv", sep='\t')
-    test_labels = pd.read_csv("data/english/labels-test-a.csv", header=-1, names=["id", "subtask_a"])
+    train_2019 = pd.read_csv("data/german/germeval2019_training_subtask12.txt", sep='\t',
+                             names=['tweet', 'sub_task_1', 'sub_task_2'])
 
-    test = pd.merge(test_tweets, test_labels, on=['id', 'id'])
+    train = pd.concat([train_2018, train_2019])
+
+    test = pd.read_csv("data/german/germeval2018.test_.txt", sep='\t',
+                       names=['tweet', 'sub_task_1', 'sub_task_2'])
 
     print('Completed reading')
 
@@ -37,8 +41,8 @@ if __name__ == "__main__":
     # Variables
 
     TEXT_COLUMN = "tweet"
-    LABEL_COLUMN = "subtask_a"
-    EMBEDDING_FILE = '/data/fasttext/crawl-300d-2M-subword.vec'
+    LABEL_COLUMN = "sub_task_1"
+    EMBEDDING_FILE = '/data/fasttext/wiki.de.vec'
     MODEL_PATH = "models/capsule_net_weights_best.h5"
     PREDICTION_FILE = "predictions/capsule_net.csv"
 
