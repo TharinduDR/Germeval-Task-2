@@ -1,3 +1,7 @@
+import spacy
+
+nlp = spacy.load('de_core_news_sm')
+
 def clean_text(x):
     puncts = [',', '.', '"', ':', ')', '(', '-', '!', '?', '|', ';', "'", '$', '&', '/', '[', ']', '>', '%', '=', '#',
               '*', '+', '\\', '•', '~', '@', '£',
@@ -13,4 +17,21 @@ def clean_text(x):
     x = str(x)
     for punct in puncts:
         x = x.replace(punct, f' {punct} ')
+    return x
+
+
+def remove_names(x):
+    for word in x.split():
+        if word[0] == "@":
+            x = x.replace(word, "")
+    return x
+
+
+def entity_recognizing(x):
+    doc = nlp(x)
+    for ent in doc.ents:
+        if ent.label_ == 'PER':
+            print(ent.text)
+            x = x.replace(ent.text, "name")
+
     return x

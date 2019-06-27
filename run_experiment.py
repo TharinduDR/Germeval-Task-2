@@ -9,10 +9,10 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import LabelEncoder
 from tensorflow import set_random_seed
 
-from algo.nn.models import capsule
+from algo.nn.models import lstm_gru_attention, capsule
 from algo.nn.utility import f1_smart
 from embeddings import get_emb_matrix
-from preprocessing import clean_text
+from preprocessing import clean_text, remove_names, entity_recognizing
 
 if __name__ == "__main__":
     seed(726)
@@ -43,14 +43,31 @@ if __name__ == "__main__":
     TEXT_COLUMN = "tweet"
     LABEL_COLUMN = "sub_task_1"
     EMBEDDING_FILE = '/data/fasttext/wiki.de.vec'
-    MODEL_PATH = "models/capsule_net_weights_best.h5"
+    MODEL_PATH = "models/capsule_weights_best.h5"
     PREDICTION_FILE = "predictions/capsule_net.csv"
 
+    print(train.head())
+
+    print("Removing usernames")
+    train[TEXT_COLUMN] = train[TEXT_COLUMN].apply(lambda x: remove_names(x))
+    test[TEXT_COLUMN] = test[TEXT_COLUMN].apply(lambda x: remove_names(x))
+    print(train.head())
+
+    print("Identifying names")
+
+    train[TEXT_COLUMN] = train[TEXT_COLUMN].apply(lambda x: entity_recognizing(x))
+    test[TEXT_COLUMN] = test[TEXT_COLUMN].apply(lambda x: entity_recognizing(x))
+    print(train.head())
+
+    print("Converting to lower-case")
     train[TEXT_COLUMN] = train[TEXT_COLUMN].str.lower()
     test[TEXT_COLUMN] = test[TEXT_COLUMN].str.lower()
+    print(train.head())
 
+    print("Cleaning punctuation marks")
     train[TEXT_COLUMN] = train[TEXT_COLUMN].apply(lambda x: clean_text(x))
     test[TEXT_COLUMN] = test[TEXT_COLUMN].apply(lambda x: clean_text(x))
+    print(train.head())
 
     train['doc_len'] = train[TEXT_COLUMN].apply(lambda words: len(words.split(" ")))
     max_seq_len = np.round(train['doc_len'].mean() + train['doc_len'].std()).astype(int)
