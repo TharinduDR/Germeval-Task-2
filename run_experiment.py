@@ -1,3 +1,5 @@
+import configparser
+
 import numpy as np
 import pandas as pd
 from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, EarlyStopping
@@ -9,7 +11,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import LabelEncoder
 from tensorflow import set_random_seed
 
-from algo.nn.models import lstm_gru_attention, capsule
+from algo.nn.models import capsule
 from algo.nn.utility import f1_smart
 from embeddings import get_emb_matrix
 from preprocessing import clean_text, remove_names, entity_recognizing
@@ -42,9 +44,14 @@ if __name__ == "__main__":
 
     TEXT_COLUMN = "tweet"
     LABEL_COLUMN = "sub_task_1"
-    EMBEDDING_FILE = '/data/fasttext/wiki.de.vec'
-    MODEL_PATH = "models/capsule_weights_best.h5"
-    PREDICTION_FILE = "predictions/capsule_net.csv"
+
+    configParser = configparser.RawConfigParser()
+    configFilePath = "config.txt"
+    configParser.read(configFilePath)
+
+    EMBEDDING_FILE = configParser.get('model-config', 'EMBEDDING_FILE')
+    MODEL_PATH = configParser.get('model-config', 'MODEL_PATH')
+    PREDICTION_FILE = configParser.get('model-config', 'PREDICTION_FILE')
 
     print(train.head())
 

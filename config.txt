@@ -1,0 +1,4 @@
+[model-config]
+EMBEDDING_FILE = "/data/fasttext/wiki.de.vec"
+MODEL_PATH = "models/capsule_weights_best.h5"
+PREDICTION_FILE = "predictions/capsule_net.csv"
