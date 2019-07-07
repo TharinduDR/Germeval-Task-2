@@ -2,10 +2,12 @@ import keras.backend as K
 from keras import Input, Model
 from keras.initializers import glorot_normal, orthogonal
 from keras.layers import Embedding, SpatialDropout1D, Bidirectional, GRU, Flatten, Dense, Dropout, BatchNormalization, \
-    Reshape, Conv2D, MaxPool2D, Concatenate, GlobalAveragePooling1D, GlobalMaxPooling1D, concatenate, LSTM
+    Reshape, Conv2D, MaxPool2D, Concatenate, GlobalAveragePooling1D, GlobalMaxPooling1D, concatenate, LSTM, Conv1D, \
+    Activation
 from keras.optimizers import Adam
 
 from algo.nn.layers import Capsule, Attention
+from algo.nn.wrappers import DropConnect
 
 
 def capsule(maxlen, max_features, embed_size, embedding_matrix):
@@ -130,3 +132,28 @@ def lstm_gru_attention(maxlen, max_features, embed_size, embedding_matrix):
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
     return model
+
+
+def attention_capsule(maxlen, max_features, embed_size, embedding_matrix):
+    inp = Input(shape=(maxlen,))
+    x = Embedding(max_features, embed_size, weights=[embedding_matrix], trainable=False)(inp)
+    x = SpatialDropout1D(rate=0.24)(x)
+    x = Bidirectional(LSTM(80,
+                                return_sequences=True,
+                                kernel_initializer=glorot_normal(seed=1029),
+                                recurrent_initializer=orthogonal(gain=1.0, seed=1029)))(x)
+
+    x_1 = Attention(maxlen)(x)
+    x_1 = DropConnect(Dense(32, activation="relu"), prob=0.2)(x_1)
+
+    x_2 = Capsule(num_capsule=10, dim_capsule=10, routings=4, share_weights=True)(x)
+    x_2 = Flatten()(x_2)
+    x_2 = DropConnect(Dense(32, activation="relu"), prob=0.2)(x_2)
+    conc = concatenate([x_1, x_2])
+    # conc = add([x_1, x_2])
+    outp = Dense(1, activation="sigmoid")(conc)
+    model = Model(inputs=inp, outputs=outp)
+    model.compile(loss='binary_crossentropy', optimizer=Adam(), metrics=['accuracy'])
+    return model
+
+

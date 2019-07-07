@@ -11,7 +11,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import LabelEncoder
 from tensorflow import set_random_seed
 
-from algo.nn.models import capsule
+from algo.nn.models import capsule, attention_capsule, cnn_2d, pooled_gru, lstm_attention, lstm_gru_attention
 from algo.nn.utility import f1_smart
 from embeddings import get_emb_matrix
 from preprocessing import clean_text, remove_names, entity_recognizing
@@ -49,22 +49,22 @@ if __name__ == "__main__":
     configFilePath = "config.txt"
     configParser.read(configFilePath)
 
-    EMBEDDING_FILE = configParser.get('model-config', 'EMBEDDING_FILE')
-    MODEL_PATH = configParser.get('model-config', 'MODEL_PATH')
-    PREDICTION_FILE = configParser.get('model-config', 'PREDICTION_FILE')
+    EMBEDDING_FILE = configParser.get('sub_task_1_model-config', 'EMBEDDING_FILE')
+    MODEL_PATH = configParser.get('sub_task_1_model-config', 'MODEL_PATH')
+    PREDICTION_FILE = configParser.get('sub_task_1_model-config', 'PREDICTION_FILE')
 
     print(train.head())
 
-    print("Removing usernames")
-    train[TEXT_COLUMN] = train[TEXT_COLUMN].apply(lambda x: remove_names(x))
-    test[TEXT_COLUMN] = test[TEXT_COLUMN].apply(lambda x: remove_names(x))
-    print(train.head())
-
-    print("Identifying names")
-
-    train[TEXT_COLUMN] = train[TEXT_COLUMN].apply(lambda x: entity_recognizing(x))
-    test[TEXT_COLUMN] = test[TEXT_COLUMN].apply(lambda x: entity_recognizing(x))
-    print(train.head())
+    # print("Removing usernames")
+    # train[TEXT_COLUMN] = train[TEXT_COLUMN].apply(lambda x: remove_names(x))
+    # test[TEXT_COLUMN] = test[TEXT_COLUMN].apply(lambda x: remove_names(x))
+    # print(train.head())
+    #
+    # print("Identifying names")
+    #
+    # train[TEXT_COLUMN] = train[TEXT_COLUMN].apply(lambda x: entity_recognizing(x))
+    # test[TEXT_COLUMN] = test[TEXT_COLUMN].apply(lambda x: entity_recognizing(x))
+    # print(train.head())
 
     print("Converting to lower-case")
     train[TEXT_COLUMN] = train[TEXT_COLUMN].str.lower()
@@ -127,7 +127,7 @@ if __name__ == "__main__":
         reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.6, patience=1, min_lr=0.0001, verbose=2)
         earlystopping = EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=2, verbose=2, mode='auto')
         callbacks = [checkpoint, reduce_lr]
-        model = capsule(maxlen, max_features, embed_size, embedding_matrix)
+        model = attention_capsule(maxlen, max_features, embed_size, embedding_matrix)
         if i == 0: print(model.summary())
         model.fit(X_train, Y_train, batch_size=64, epochs=20, validation_data=(X_val, Y_val), verbose=2,
                   callbacks=callbacks,
