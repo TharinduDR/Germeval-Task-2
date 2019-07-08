@@ -3,12 +3,11 @@ import configparser
 import numpy as np
 import pandas as pd
 from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, EarlyStopping
-from keras.utils import np_utils
 from keras_preprocessing.sequence import pad_sequences
 from keras_preprocessing.text import Tokenizer
 from numpy.random import seed
 from sklearn.metrics import confusion_matrix, f1_score, accuracy_score, recall_score, precision_score
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold, train_test_split
 from sklearn.preprocessing import LabelEncoder
 from tensorflow import set_random_seed
 
@@ -24,16 +23,13 @@ if __name__ == "__main__":
     print('Reading files')
 
     # Reading File Section - This should change
-    train_2018 = pd.read_csv("data/german/germeval2018.training.txt", sep='\t',
-                             names=['tweet', 'sub_task_1', 'sub_task_2'])
 
-    train_2019 = pd.read_csv("data/german/germeval2019_training_subtask12.txt", sep='\t',
-                             names=['tweet', 'sub_task_1', 'sub_task_2'])
+    train_2019 = pd.read_csv("data/german/germeval2019.training_subtask3.txt", sep='\t',
+                             names=['tweet', 'sub_task_1', 'sub_task_2', 'sub_task_3'])
 
-    train = pd.concat([train_2018, train_2019])
+    train, test = train_test_split(train_2019, test_size=0.2)
 
-    test = pd.read_csv("data/german/germeval2018.test_.txt", sep='\t',
-                       names=['tweet', 'sub_task_1', 'sub_task_2'])
+
 
     print('Completed reading')
 
@@ -44,15 +40,15 @@ if __name__ == "__main__":
     # Variables
 
     TEXT_COLUMN = "tweet"
-    LABEL_COLUMN = "sub_task_2"
+    LABEL_COLUMN = "sub_task_3"
 
     configParser = configparser.RawConfigParser()
     configFilePath = "config.txt"
     configParser.read(configFilePath)
 
-    EMBEDDING_FILE = configParser.get('sub_task_2_model-config', 'EMBEDDING_FILE')
-    MODEL_PATH = configParser.get('sub_task_2_model-config', 'MODEL_PATH')
-    PREDICTION_FILE = configParser.get('sub_task_2_model-config', 'PREDICTION_FILE')
+    EMBEDDING_FILE = configParser.get('sub_task_3_model-config', 'EMBEDDING_FILE')
+    MODEL_PATH = configParser.get('sub_task_3_model-config', 'MODEL_PATH')
+    PREDICTION_FILE = configParser.get('sub_task_3_model-config', 'PREDICTION_FILE')
 
     print(train.head())
 
@@ -119,19 +115,16 @@ if __name__ == "__main__":
     print('Start Training')
 
     kfold = StratifiedKFold(n_splits=5, random_state=10, shuffle=True)
-    y_test = np.zeros((X_test.shape[0], 4))
+    bestscore = []
+    y_test = np.zeros((X_test.shape[0],))
     for i, (train_index, valid_index) in enumerate(kfold.split(X, encoded_Y)):
         X_train, X_val, Y_train, Y_val = X[train_index], X[valid_index], encoded_Y[train_index], encoded_Y[valid_index]
-
-        Y_train = np_utils.to_categorical(Y_train, num_classes=4)
-        Y_val = np_utils.to_categorical(Y_val, num_classes=4)
-
         filepath = MODEL_PATH
         checkpoint = ModelCheckpoint(filepath, monitor='val_loss', verbose=2, save_best_only=True, mode='min')
         reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.6, patience=1, min_lr=0.0001, verbose=2)
         earlystopping = EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=2, verbose=2, mode='auto')
         callbacks = [checkpoint, reduce_lr]
-        model = capsule(maxlen, max_features, embed_size, embedding_matrix, 4)
+        model = capsule(maxlen, max_features, embed_size, embedding_matrix, 1)
         if i == 0: print(model.summary())
         model.fit(X_train, Y_train, batch_size=64, epochs=20, validation_data=(X_val, Y_val), verbose=2,
                   callbacks=callbacks,
@@ -139,10 +132,14 @@ if __name__ == "__main__":
         model.load_weights(filepath)
         y_pred = model.predict([X_val], batch_size=64, verbose=2)
         y_test += np.squeeze(model.predict([X_test], batch_size=64, verbose=2)) / 5
+        f1, threshold = f1_smart(np.squeeze(Y_val), np.squeeze(y_pred))
+        print('Optimal F1: {:.4f} at threshold: {:.4f}'.format(f1, threshold))
+        bestscore.append(threshold)
 
     print('Finished Training')
 
-    pred_test_y = y_test.argmax(1)
+    y_test = y_test.reshape((-1, 1))
+    pred_test_y = (y_test > np.mean(bestscore)).astype(int)
     test['predictions'] = le.inverse_transform(pred_test_y)
 
     # save predictions
@@ -152,11 +149,13 @@ if __name__ == "__main__":
     print('Saved Predictions')
 
     # post analysis
+    tn, fp, fn, tp = confusion_matrix(test[LABEL_COLUMN], test['predictions']).ravel()
     weighted_f1 = f1_score(test[LABEL_COLUMN], test['predictions'], average='weighted')
     accuracy = accuracy_score(test[LABEL_COLUMN], test['predictions'])
     weighted_recall = recall_score(test[LABEL_COLUMN], test['predictions'], average='weighted')
     weighted_precision = precision_score(test[LABEL_COLUMN], test['predictions'], average='weighted')
 
+    print("Confusion Matrix (tn, fp, fn, tp) {} {} {} {}".format(tn, fp, fn, tp))
     print("Accuracy ", accuracy)
     print("Weighted F1 ", weighted_f1)
     print("Weighted Recall ", weighted_recall)
