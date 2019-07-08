@@ -10,7 +10,7 @@ from algo.nn.layers import Capsule, Attention
 from algo.nn.wrappers import DropConnect
 
 
-def capsule(maxlen, max_features, embed_size, embedding_matrix):
+def capsule(maxlen, max_features, embed_size, embedding_matrix, num_classes):
     K.clear_session()
     inp = Input(shape=(maxlen,))
     #     word = Embedding(max_features, embed_size, weights=[embedding_matrix], trainable=False)(inp)
@@ -32,13 +32,13 @@ def capsule(maxlen, max_features, embed_size, embedding_matrix):
     x = Dropout(0.12)(x)
     x = BatchNormalization()(x)
 
-    x = Dense(1, activation="sigmoid")(x)
+    x = Dense(num_classes, activation="sigmoid")(x)
     model = Model(inputs=inp, outputs=x)
     model.compile(loss='binary_crossentropy', optimizer=Adam(), metrics=['accuracy'])
     return model
 
 
-def cnn_2d(maxlen, max_features, embed_size, embedding_matrix):
+def cnn_2d(maxlen, max_features, embed_size, embedding_matrix, num_classes):
     K.clear_session()
 
     filter_sizes = [1, 2, 3, 5]
@@ -67,7 +67,7 @@ def cnn_2d(maxlen, max_features, embed_size, embedding_matrix):
     z = Flatten()(z)
     z = Dropout(0.1)(z)
 
-    outp = Dense(1, activation="sigmoid")(z)
+    outp = Dense(num_classes, activation="sigmoid")(z)
 
     model = Model(inputs=inp, outputs=outp)
     model.compile(loss='binary_crossentropy',
@@ -77,7 +77,7 @@ def cnn_2d(maxlen, max_features, embed_size, embedding_matrix):
     return model
 
 
-def pooled_gru(maxlen, max_features, embed_size, embedding_matrix):
+def pooled_gru(maxlen, max_features, embed_size, embedding_matrix, num_classes):
     K.clear_session()
     inp = Input(shape=(maxlen,))
     x = Embedding(max_features, embed_size, weights=[embedding_matrix])(inp)
@@ -86,7 +86,7 @@ def pooled_gru(maxlen, max_features, embed_size, embedding_matrix):
     avg_pool = GlobalAveragePooling1D()(x)
     max_pool = GlobalMaxPooling1D()(x)
     conc = concatenate([avg_pool, max_pool])
-    outp = Dense(1, activation="sigmoid")(conc)
+    outp = Dense(num_classes, activation="sigmoid")(conc)
 
     model = Model(inputs=inp, outputs=outp)
     model.compile(loss='binary_crossentropy',
@@ -95,7 +95,7 @@ def pooled_gru(maxlen, max_features, embed_size, embedding_matrix):
     return model
 
 
-def lstm_attention(maxlen, max_features, embed_size, embedding_matrix):
+def lstm_attention(maxlen, max_features, embed_size, embedding_matrix, num_classes):
     K.clear_session()
     inp = Input(shape=(maxlen,))
     x = Embedding(max_features, embed_size, weights=[embedding_matrix], trainable=False)(inp)
@@ -104,14 +104,14 @@ def lstm_attention(maxlen, max_features, embed_size, embedding_matrix):
     x = Attention(maxlen)(x)
     x = Dense(256, activation="relu")(x)
     # x = Dropout(0.25)(x)
-    x = Dense(1, activation="sigmoid")(x)
+    x = Dense(num_classes, activation="sigmoid")(x)
     model = Model(inputs=inp, outputs=x)
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
     return model
 
 
-def lstm_gru_attention(maxlen, max_features, embed_size, embedding_matrix):
+def lstm_gru_attention(maxlen, max_features, embed_size, embedding_matrix, num_classes):
     inp = Input(shape=(maxlen,))
     x = Embedding(max_features, embed_size, weights=[embedding_matrix], trainable=False)(inp)
     x = SpatialDropout1D(0.1)(x)
@@ -126,7 +126,7 @@ def lstm_gru_attention(maxlen, max_features, embed_size, embedding_matrix):
     conc = concatenate([atten_1, atten_2, avg_pool, max_pool])
     conc = Dense(16, activation="relu")(conc)
     conc = Dropout(0.1)(conc)
-    outp = Dense(1, activation="sigmoid")(conc)
+    outp = Dense(num_classes, activation="sigmoid")(conc)
 
     model = Model(inputs=inp, outputs=outp)
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
@@ -134,7 +134,7 @@ def lstm_gru_attention(maxlen, max_features, embed_size, embedding_matrix):
     return model
 
 
-def attention_capsule(maxlen, max_features, embed_size, embedding_matrix):
+def attention_capsule(maxlen, max_features, embed_size, embedding_matrix, num_classes):
     inp = Input(shape=(maxlen,))
     x = Embedding(max_features, embed_size, weights=[embedding_matrix], trainable=False)(inp)
     x = SpatialDropout1D(rate=0.24)(x)
@@ -151,7 +151,7 @@ def attention_capsule(maxlen, max_features, embed_size, embedding_matrix):
     x_2 = DropConnect(Dense(32, activation="relu"), prob=0.2)(x_2)
     conc = concatenate([x_1, x_2])
     # conc = add([x_1, x_2])
-    outp = Dense(1, activation="sigmoid")(conc)
+    outp = Dense(num_classes, activation="sigmoid")(conc)
     model = Model(inputs=inp, outputs=outp)
     model.compile(loss='binary_crossentropy', optimizer=Adam(), metrics=['accuracy'])
     return model
