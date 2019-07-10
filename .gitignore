@@ -73,6 +73,3 @@ fabric.properties
 .ipynb_checkpoints/.idea
 .ipynb_checkpoints
 
-
-models/
-predictions/
