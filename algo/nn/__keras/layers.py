@@ -2,7 +2,7 @@ import keras.backend as K
 from keras.engine import Layer
 from keras.layers import Activation, initializers, regularizers, constraints
 
-from algo.nn.utility import squash
+from algo.nn.__keras.utility import squash
 
 
 class Capsule(Layer):

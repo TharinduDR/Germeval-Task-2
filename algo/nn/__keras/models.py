@@ -6,8 +6,8 @@ from keras.layers import Embedding, SpatialDropout1D, Bidirectional, GRU, Flatte
     Activation
 from keras.optimizers import Adam
 
-from algo.nn.layers import Capsule, Attention
-from algo.nn.wrappers import DropConnect
+from algo.nn.__keras.layers import Capsule, Attention
+from algo.nn.__keras.wrappers import DropConnect
 
 
 def capsule(maxlen, max_features, embed_size, embedding_matrix, num_classes):

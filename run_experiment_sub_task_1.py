@@ -11,15 +11,13 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import LabelEncoder
 from tensorflow import set_random_seed
 
-from algo.nn.models import capsule, attention_capsule, cnn_2d, pooled_gru, lstm_attention, lstm_gru_attention
-from algo.nn.utility import f1_smart
+from algo.nn.__keras.models import capsule, attention_capsule, cnn_2d, pooled_gru, lstm_attention, lstm_gru_attention
+from algo.nn.__keras.utility import f1_smart
 from embeddings import get_emb_matrix
 from preprocessing import clean_text, remove_names, entity_recognizing
 
-if __name__ == "__main__":
-    seed(726)
-    set_random_seed(726)
 
+def run_keras_experiment():
     print('Reading files')
 
     # Reading File Section - This should change
@@ -163,3 +161,12 @@ if __name__ == "__main__":
     print("Weighted F1 ", weighted_f1)
     print("Weighted Recall ", weighted_recall)
     print("Weighted Precision ", weighted_precision)
+
+
+
+
+if __name__ == "__main__":
+    seed(726)
+    set_random_seed(726)
+    run_keras_experiment()
+

@@ -11,8 +11,8 @@ from sklearn.model_selection import StratifiedKFold, train_test_split
 from sklearn.preprocessing import LabelEncoder
 from tensorflow import set_random_seed
 
-from algo.nn.models import capsule, attention_capsule, cnn_2d, pooled_gru, lstm_attention, lstm_gru_attention
-from algo.nn.utility import f1_smart
+from algo.nn.__keras.models import capsule
+from algo.nn.__keras.utility import f1_smart
 from embeddings import get_emb_matrix
 from preprocessing import clean_text, remove_names, entity_recognizing
 
