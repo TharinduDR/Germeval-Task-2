@@ -55,10 +55,10 @@ if __name__ == "__main__":
 
     print(train.head())
 
-    # print("Removing usernames")
-    # train[TEXT_COLUMN] = train[TEXT_COLUMN].apply(lambda x: remove_names(x))
-    # test[TEXT_COLUMN] = test[TEXT_COLUMN].apply(lambda x: remove_names(x))
-    # print(train.head())
+    print("Removing usernames")
+    train[TEXT_COLUMN] = train[TEXT_COLUMN].apply(lambda x: remove_names(x))
+    test[TEXT_COLUMN] = test[TEXT_COLUMN].apply(lambda x: remove_names(x))
+    print(train.head())
     #
     # print("Identifying names")
     #
