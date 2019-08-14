@@ -32,11 +32,15 @@ def run_keras_experiment():
     test = pd.read_csv("data/german/germeval2018.test_.txt", sep='\t',
                        names=['tweet', 'sub_task_1', 'sub_task_2'])
 
+    test_2019 = pd.read_csv("data/german/germeval2019_Testdata_Subtask12.txt", sep='\t',
+                       names=['tweet'])
+
     print('Completed reading')
 
     #############
     print("Train shape : ", train.shape)
     print("Test shape : ", test.shape)
+    print("2019 Test shape :", test_2019.shape)
 
     # Variables
 
@@ -67,11 +71,13 @@ def run_keras_experiment():
     print("Converting to lower-case")
     train[TEXT_COLUMN] = train[TEXT_COLUMN].str.lower()
     test[TEXT_COLUMN] = test[TEXT_COLUMN].str.lower()
+    test_2019[TEXT_COLUMN] = test_2019[TEXT_COLUMN].str.lower()
     print(train.head())
 
     print("Cleaning punctuation marks")
     train[TEXT_COLUMN] = train[TEXT_COLUMN].apply(lambda x: clean_text(x))
     test[TEXT_COLUMN] = test[TEXT_COLUMN].apply(lambda x: clean_text(x))
+    test_2019[TEXT_COLUMN] = test_2019[TEXT_COLUMN].apply(lambda x: clean_text(x))
     print(train.head())
 
     train['doc_len'] = train[TEXT_COLUMN].apply(lambda words: len(words.split(" ")))
@@ -84,6 +90,7 @@ def run_keras_experiment():
     # fill up the missing values
     X = train[TEXT_COLUMN].fillna("_na_").values
     X_test = test[TEXT_COLUMN].fillna("_na_").values
+    X_test_2019 = test_2019[TEXT_COLUMN].fillna("_na_").values
 
     # Tokenize the sentences
     tokenizer = Tokenizer(num_words=max_features, filters='')
@@ -91,10 +98,12 @@ def run_keras_experiment():
 
     X = tokenizer.texts_to_sequences(X)
     X_test = tokenizer.texts_to_sequences(X_test)
+    X_test_2019 = tokenizer.texts_to_sequences(X_test_2019)
 
     # Pad the sentences
     X = pad_sequences(X, maxlen=maxlen)
     X_test = pad_sequences(X_test, maxlen=maxlen)
+    X_test_2019 = pad_sequences(X_test_2019, maxlen=maxlen)
 
     # Get the target values
     Y = train[LABEL_COLUMN].values
@@ -118,6 +127,7 @@ def run_keras_experiment():
     kfold = StratifiedKFold(n_splits=5, random_state=10, shuffle=True)
     bestscore = []
     y_test = np.zeros((X_test.shape[0],))
+    y_test_2019 = np.zeros((X_test_2019.shape[0],))
     for i, (train_index, valid_index) in enumerate(kfold.split(X, encoded_Y)):
         X_train, X_val, Y_train, Y_val = X[train_index], X[valid_index], encoded_Y[train_index], encoded_Y[valid_index]
         filepath = MODEL_PATH
@@ -125,7 +135,7 @@ def run_keras_experiment():
         reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.6, patience=1, min_lr=0.0001, verbose=2)
         earlystopping = EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=2, verbose=2, mode='auto')
         callbacks = [checkpoint, reduce_lr]
-        model = capsule(maxlen, max_features, embed_size, embedding_matrix, 1)
+        model = pooled_gru(maxlen, max_features, embed_size, embedding_matrix, 1)
         if i == 0: print(model.summary())
         model.fit(X_train, Y_train, batch_size=64, epochs=20, validation_data=(X_val, Y_val), verbose=2,
                   callbacks=callbacks,
@@ -133,6 +143,7 @@ def run_keras_experiment():
         model.load_weights(filepath)
         y_pred = model.predict([X_val], batch_size=64, verbose=2)
         y_test += np.squeeze(model.predict([X_test], batch_size=64, verbose=2)) / 5
+        y_test_2019 += np.squeeze(model.predict([X_test_2019], batch_size=64, verbose=2)) / 5
         f1, threshold = f1_smart(np.squeeze(Y_val), np.squeeze(y_pred))
         print('Optimal F1: {:.4f} at threshold: {:.4f}'.format(f1, threshold))
         bestscore.append(threshold)
@@ -143,9 +154,18 @@ def run_keras_experiment():
     pred_test_y = (y_test > np.mean(bestscore)).astype(int)
     test['predictions'] = le.inverse_transform(pred_test_y)
 
+    y_test_2019 = y_test_2019.reshape((-1, 1))
+    pred_test_y_2019 = (y_test_2019 > np.mean(bestscore)).astype(int)
+
+    test_2019_temp = pd.read_csv("data/german/germeval2019_Testdata_Subtask12.txt", sep='\t',
+                            names=['tweet'])
+
+    test_2019['predictions'] = le.inverse_transform(pred_test_y_2019)
+    test_2019['tweet'] = test_2019_temp['tweet']
+
     # save predictions
     file_path = PREDICTION_FILE
-    test.to_csv(file_path, sep='\t', encoding='utf-8')
+    test_2019.to_csv(file_path, sep='\t', encoding='utf-8', header=False, index=False)
 
     print('Saved Predictions')
 
@@ -161,6 +181,12 @@ def run_keras_experiment():
     print("Weighted F1 ", weighted_f1)
     print("Weighted Recall ", weighted_recall)
     print("Weighted Precision ", weighted_precision)
+
+
+def run_pytorch_experiment():
+    seed(726)
+    set_random_seed(726)
+
 
 
 

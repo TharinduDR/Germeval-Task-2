@@ -1,15 +1,15 @@
 [sub_task_1_model-config]
 EMBEDDING_FILE = /data/fasttext/wiki.de.vec
 MODEL_PATH = models/capsule_weights_task_1.h5
-PREDICTION_FILE = predictions/capsule_net.csv
+PREDICTION_FILE = predictions/rgcl_coarse_3.txt
 
 [sub_task_2_model-config]
 EMBEDDING_FILE = /data/fasttext/wiki.de.vec
 MODEL_PATH = models/capsule_weights_task_2.h5
-PREDICTION_FILE = predictions/capsule_net.csv
+PREDICTION_FILE = predictions/rgcl_fine_3.txt
 
 
 [sub_task_3_model-config]
 EMBEDDING_FILE = /data/fasttext/wiki.de.vec
 MODEL_PATH = models/capsule_weights_task_3.h5
-PREDICTION_FILE = predictions/capsule_net.csv
+PREDICTION_FILE = predictions/rgcl_implicit_3.txt
